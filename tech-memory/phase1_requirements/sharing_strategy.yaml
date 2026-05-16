@@ -1,0 +1,46 @@
+# Sharing Strategy — tech-memory
+# platforms: web, api
+
+strategy:
+  shared_modules:
+    - name: "型定義・インターフェース"
+      path: "phase3_code/shared_core/types/"
+      reason: "APIレスポンス型・技術カード型を web と api で共有する"
+    - name: "APIクライアント（型定義）"
+      path: "phase3_code/shared_core/api/"
+      reason: "フロントエンドがバックエンドを呼ぶ際の型付きクライアントを共有"
+    - name: "バリデーションスキーマ"
+      path: "phase3_code/shared_core/schemas/"
+      reason: "入力バリデーションルールをAPIとフロントで共有"
+    - name: "定数・設定"
+      path: "phase3_code/shared_core/constants/"
+      reason: "collection_mode 等の共通定数を共有"
+
+  platform_specific:
+    api:
+      - name: "FastAPI アプリケーション本体"
+        path: "phase3_code/backend/api/"
+        reason: "バックエンドのルーティング・エンドポイント定義"
+      - name: "データベース層"
+        path: "phase3_code/backend/db/"
+        reason: "PostgreSQL + pgvector のモデル・マイグレーション・クエリ"
+      - name: "収集・抽出ロジック"
+        path: "phase3_code/backend/logic/"
+        reason: "URL取得・LLM抽出・embedding生成・正規化・重複排除"
+    web:
+      - name: "Next.js フロントエンド"
+        path: "phase3_code/frontend/web/"
+        reason: "検索UI・技術カード表示・収集画面"
+
+  adaptable:
+    - name: "技術カードのデータ表示ロジック"
+      shared_path: "phase3_code/shared_core/types/"
+      platform_adapters:
+        api: "phase3_code/backend/api/ (シリアライズ)"
+        web: "phase3_code/frontend/web/components/ (レンダリング)"
+      reason: "技術カードの型定義は共通だが、表示方法はAPI/Webで異なる"
+
+  notes:
+    - "バックエンドはPython (FastAPI)、フロントエンドはTypeScript (Next.js)のため、完全なコード共有はできない"
+    - "型定義の共有はOpenAPI specを介して行うことを推奨（FastAPIが自動生成）"
+    - "APIクライアントはOpenAPI specからTypeScript型を自動生成する（openapi-typescript等）"

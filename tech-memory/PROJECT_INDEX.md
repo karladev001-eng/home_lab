@@ -15,7 +15,7 @@
 ## Phase 1 — 要件分析
 
 | ドキュメント | 内容 |
-|---|---|
+| --- | --- |
 | [idea_analysis.json](phase1_requirements/idea_analysis.json) | 機能一覧・ユースケース・優先度 |
 | [requirements_spec.md](phase1_requirements/requirements_spec.md) | 機能要件・非機能要件・制約条件 |
 | [tech_stack.yaml](phase1_requirements/tech_stack.yaml) | 採用技術と選定理由 |
@@ -25,7 +25,7 @@
 ## Phase 2 — 設計
 
 | ドキュメント | 内容 |
-|---|---|
+| --- | --- |
 | [architecture.md](phase2_design/architecture.md) | 構成図・APIエンドポイント定義・認証方式・Docker Compose |
 | [data_model.json](phase2_design/data_model.json) | 11テーブルのER設計・インデックス戦略・マイグレーション方針 |
 | [screen_flow.md](phase2_design/ui_ux/screen_flow.md) | 7画面の遷移図・PF別UI方針 |
@@ -37,7 +37,7 @@
 ## Phase 3 — コード生成
 
 | ドキュメント | 内容 |
-|---|---|
+| --- | --- |
 | [be_report.md](phase3_code/reports/be_report.md) | バックエンド実装状況・API実装報告 |
 | [fe_report.md](phase3_code/reports/fe_report.md) | フロントエンド実装状況・デザイン適合 |
 | [final_code_spec.md](phase3_code/reports/final_code_spec.md) | ファイル構成・API一覧・依存関係・起動方法 |
@@ -49,7 +49,7 @@
 ## Phase 4 — 品質保証
 
 | ドキュメント | 内容 |
-|---|---|
+| --- | --- |
 | [test_results/results.md](phase4_qa/test_results/results.md) | ユニットテスト13件・API結合テスト24件の実行結果（全PASS） |
 | [test_results/api/test_api_integration.py](phase4_qa/test_results/api/test_api_integration.py) | Phase 4生成の結合テストスイート（24ケース） |
 | [review_comments.md](phase4_qa/review_comments.md) | セキュリティ・パフォーマンス・品質レビュー（Critical 0件・Warning 3件） |
@@ -59,7 +59,7 @@
 ## Phase 5 — 成果物生成
 
 | ドキュメント | 内容 |
-|---|---|
+| --- | --- |
 | [README.md](phase5_output/docs/README.md) | セットアップ〜使い方の完全ガイド（ステップ1〜5で起動） |
 | [API.md](phase5_output/docs/API.md) | 全エンドポイント（9件）の詳細仕様・リクエスト/レスポンス例 |
 | [DEPLOY.md](phase5_output/docs/DEPLOY.md) | VPS/本番環境へのデプロイ手順・Nginx設定・バックアップ |

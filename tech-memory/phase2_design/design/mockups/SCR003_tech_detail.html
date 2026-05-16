@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Behavior Tree - tech-memory</title>
+  <style>
+    :root {
+      --color-primary-500: #6366f1;
+      --color-primary-600: #4f46e5;
+      --color-primary-300: #a5b4fc;
+      --color-bg: #0f172a;
+      --color-surface: #1e293b;
+      --color-surface-elevated: #334155;
+      --color-border: #334155;
+      --color-text-primary: #f1f5f9;
+      --color-text-secondary: #94a3b8;
+      --color-text-muted: #64748b;
+      --color-success: #22c55e;
+      --color-warning: #f59e0b;
+      --color-error: #ef4444;
+      --color-teal: #14b8a6;
+      --font-sans: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+      --nav-height: 56px;
+      --radius-md: 0.375rem;
+      --radius-lg: 0.5rem;
+      --radius-xl: 0.75rem;
+      --radius-full: 9999px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background-color: var(--color-bg); color: var(--color-text-primary); min-height: 100vh; }
+    nav { height: var(--nav-height); background: var(--color-surface); border-bottom: 1px solid var(--color-border); display: flex; align-items: center; padding: 0 1.5rem; gap: 2rem; position: fixed; top: 0; left: 0; right: 0; z-index: 200; }
+    .nav-logo { font-size: 1.125rem; font-weight: 700; color: var(--color-primary-300); text-decoration: none; }
+    .nav-links { display: flex; gap: 0.25rem; margin-left: auto; }
+    .nav-link { padding: 0.4rem 0.875rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: var(--color-text-secondary); text-decoration: none; }
+
+    main { margin-top: var(--nav-height); max-width: 900px; margin-left: auto; margin-right: auto; padding: 2rem 1.5rem 4rem; }
+
+    .back-link { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; color: var(--color-text-muted); text-decoration: none; margin-bottom: 1.5rem; }
+    .back-link:hover { color: var(--color-text-secondary); }
+
+    /* HERO SECTION */
+    .hero { border-bottom: 1px solid var(--color-border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 0.875rem; }
+    .tech-name { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }
+    .tech-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.875rem; }
+    .badge { display: inline-flex; align-items: center; padding: 0.225rem 0.75rem; border-radius: var(--radius-full); font-size: 0.8125rem; font-weight: 500; }
+    .badge-type { background: rgba(99,102,241,0.15); color: var(--color-primary-300); }
+    .badge-domain { background: rgba(20,184,166,0.12); color: var(--color-teal); }
+    .tech-meta { display: flex; gap: 1.5rem; }
+    .meta-item { font-size: 0.8125rem; color: var(--color-text-muted); }
+    .meta-item strong { color: var(--color-text-secondary); }
+    .btn-compare { padding: 0.5rem 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); font-size: 0.875rem; font-weight: 500; color: var(--color-text-secondary); background: transparent; cursor: pointer; white-space: nowrap; }
+
+    /* SECTIONS */
+    .section { margin-bottom: 2rem; }
+    .section-title { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 0.875rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); }
+    .section-text { font-size: 0.9375rem; color: var(--color-text-secondary); line-height: 1.7; }
+    .abstract-principle { font-size: 1rem; color: var(--color-text-primary); line-height: 1.6; padding: 1rem 1.25rem; background: rgba(99,102,241,0.08); border-left: 3px solid var(--color-primary-500); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+
+    /* CARDS IN GRID */
+    .cards-grid { display: flex; flex-direction: column; gap: 0.625rem; }
+    .info-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 0.875rem 1.125rem; }
+    .info-card-text { font-size: 0.9375rem; color: var(--color-text-primary); margin-bottom: 0.375rem; }
+    .info-card-condition { font-size: 0.8125rem; color: var(--color-text-muted); }
+    .info-card-meta { display: flex; gap: 0.75rem; margin-top: 0.5rem; }
+    .severity-badge { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 500; }
+    .severity-low { background: rgba(34,197,94,0.12); color: #22c55e; }
+    .severity-medium { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    .severity-high { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .confidence-text { font-size: 0.75rem; color: var(--color-text-muted); }
+    .evidence-tag { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); background: rgba(148,163,184,0.1); color: var(--color-text-muted); }
+
+    /* TRADEOFF */
+    .tradeoff-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 0.875rem 1.125rem; display: flex; gap: 1rem; align-items: flex-start; }
+    .tradeoff-gain { flex: 1; }
+    .tradeoff-gain-label { font-size: 0.75rem; color: #22c55e; font-weight: 600; margin-bottom: 0.25rem; }
+    .tradeoff-cost-label { font-size: 0.75rem; color: #ef4444; font-weight: 600; margin-bottom: 0.25rem; }
+    .tradeoff-arrow { color: var(--color-text-muted); font-size: 1.25rem; padding-top: 1.25rem; }
+    .tradeoff-cost { flex: 1; }
+
+    /* CONDITION LIST */
+    .condition-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .condition-item { font-size: 0.875rem; color: var(--color-text-secondary); padding: 0.625rem 1rem; border-radius: var(--radius-md); display: flex; gap: 0.75rem; align-items: flex-start; }
+    .condition-works { background: rgba(34,197,94,0.07); border-left: 3px solid #22c55e; }
+    .condition-avoid { background: rgba(239,68,68,0.07); border-left: 3px solid #ef4444; }
+
+    /* RELATION TAGS */
+    .relation-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .relation-tag { padding: 0.35rem 0.875rem; border-radius: var(--radius-full); font-size: 0.8125rem; font-weight: 500; background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text-secondary); text-decoration: none; cursor: pointer; transition: all 150ms ease; }
+    .relation-tag:hover { border-color: var(--color-primary-500); color: var(--color-primary-300); }
+
+    /* SOURCES */
+    .source-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 0.875rem 1.125rem; display: flex; align-items: flex-start; gap: 0.875rem; }
+    .source-type-badge { font-size: 0.75rem; padding: 0.2rem 0.625rem; border-radius: var(--radius-full); background: rgba(148,163,184,0.1); color: var(--color-text-muted); white-space: nowrap; }
+    .source-title { font-size: 0.875rem; color: var(--color-text-primary); margin-bottom: 0.25rem; }
+    .source-meta { font-size: 0.75rem; color: var(--color-text-muted); }
+    .source-link { color: var(--color-primary-300); text-decoration: none; font-size: 0.8125rem; }
+
+    /* KNOWN APPS */
+    .known-app-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .known-app-item { font-size: 0.875rem; color: var(--color-text-secondary); display: flex; gap: 0.75rem; align-items: flex-start; }
+    .known-app-item::before { content: "•"; color: var(--color-primary-300); flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-logo">tech-memory</a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">検索</a>
+      <a href="/ingest" class="nav-link">収集</a>
+      <a href="/recommend" class="nav-link">推薦</a>
+    </div>
+  </nav>
+
+  <main>
+    <a href="/search" class="back-link">← 検索結果に戻る</a>
+
+    <div class="hero">
+      <div class="hero-top">
+        <h1 class="tech-name">Behavior Tree</h1>
+        <button class="btn-compare">比較に追加</button>
+      </div>
+      <div class="tech-badges">
+        <span class="badge badge-type">アーキテクチャパターン</span>
+        <span class="badge badge-domain">ゲーム開発</span>
+        <span class="badge badge-domain">ロボティクス</span>
+        <span class="badge badge-domain">AIエージェント</span>
+      </div>
+      <div class="tech-meta">
+        <span class="meta-item"><strong>成熟度:</strong> mature</span>
+        <span class="meta-item"><strong>難易度:</strong> medium</span>
+        <span class="meta-item"><strong>コスト:</strong> low</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">概要</div>
+      <p class="section-text">複雑な意思決定を、条件判定と行動選択の階層構造として管理する設計パターン。各ノードはCondition（条件）またはAction（行動）であり、木構造を再帰的に評価することで複雑な行動フローを実現する。Sequence（AND）とFallback（OR）の組み合わせで多様な意思決定を表現できる。</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">中核メカニズム</div>
+      <p class="section-text">ルートノードから葉ノードへ評価を順番に行い、各ノードがSuccess / Failure / Running のいずれかを返す。Sequence ノードは全子ノードがSuccessで自身もSuccess、Fallback ノードはいずれかがSuccessで自身もSuccess。再帰的なトラバーサルにより階層的な意思決定を実現する。</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">抽象原理</div>
+      <div class="abstract-principle">複雑な意思決定を、階層化された条件判定と行動選択に分解し、再利用可能な木構造で管理する原理</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">目的</div>
+      <div class="cards-grid">
+        <div class="info-card">
+          <div class="info-card-text">NPCの行動フローを階層的に管理したい</div>
+          <div class="info-card-condition">条件: 複数の行動状態が存在し、優先度による選択が必要な場合</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-text">複雑な意思決定ロジックをデバッグ・可視化したい</div>
+          <div class="info-card-condition">条件: 行動ツリーの可視化ツールが利用可能な場合</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">メリット（条件付き）</div>
+      <div class="cards-grid">
+        <div class="info-card">
+          <div class="info-card-text">デバッグしやすく、実行パスが追いやすい</div>
+          <div class="info-card-condition">条件: ツリービジュアライザーが利用可能な場合</div>
+          <div class="info-card-meta">
+            <span class="evidence-tag">観測根拠</span>
+            <span class="confidence-text">confidence: 0.92</span>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-text">ゲームデザイナーが直感的に制御できる</div>
+          <div class="info-card-condition">条件: GUIエディタが整備されている場合</div>
+          <div class="info-card-meta">
+            <span class="evidence-tag">推定</span>
+            <span class="confidence-text">confidence: 0.78</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">デメリット（条件付き）</div>
+      <div class="cards-grid">
+        <div class="info-card">
+          <div class="info-card-text">大規模化するとツリーの管理が複雑になる</div>
+          <div class="info-card-condition">条件: 100以上のノードが存在する場合</div>
+          <div class="info-card-meta">
+            <span class="severity-badge severity-medium">medium</span>
+            <span class="evidence-tag">観測根拠</span>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-text">動的な目標変化への対応が難しい</div>
+          <div class="info-card-condition">条件: リアルタイムで目標が頻繁に変わる場合</div>
+          <div class="info-card-meta">
+            <span class="severity-badge severity-high">high</span>
+            <span class="evidence-tag">推定</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">トレードオフ</div>
+      <div class="cards-grid">
+        <div class="tradeoff-card">
+          <div class="tradeoff-gain">
+            <div class="tradeoff-gain-label">得るもの</div>
+            <div style="font-size:0.875rem; color: var(--color-text-secondary);">デバッグしやすさ・可視性</div>
+          </div>
+          <div class="tradeoff-arrow">⟷</div>
+          <div class="tradeoff-cost">
+            <div class="tradeoff-cost-label">失うもの</div>
+            <div style="font-size:0.875rem; color: var(--color-text-secondary);">大規模化時の管理コスト</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">有効な条件 / 避けるべき条件</div>
+      <div class="condition-list">
+        <div class="condition-item condition-works">階層的な優先度付き意思決定が必要な場合</div>
+        <div class="condition-item condition-works">ゲームデザイナーとエンジニアが協業する場合</div>
+        <div class="condition-item condition-avoid">状態が非常に多く動的に変化する場合 → Utility AI を検討</div>
+        <div class="condition-item condition-avoid">プランニング（目標から逆算）が必要な場合 → GOAP を検討</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">代替技術</div>
+      <div class="relation-tags">
+        <a class="relation-tag" href="/technologies/fsm">FSM</a>
+        <a class="relation-tag" href="/technologies/goap">GOAP</a>
+        <a class="relation-tag" href="/technologies/utility-ai">Utility AI</a>
+        <a class="relation-tag" href="/technologies/htn">Hierarchical Task Network</a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">組み合わせ推奨技術</div>
+      <div class="relation-tags">
+        <a class="relation-tag" href="/technologies/blackboard">Blackboard Architecture</a>
+        <a class="relation-tag" href="/technologies/hfsm">Hierarchical FSM</a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">既知の応用例</div>
+      <ul class="known-app-list">
+        <li class="known-app-item">ゲームNPCの行動制御（Halo, The Sims, Unreal Engine AI）</li>
+        <li class="known-app-item">ロボットの行動計画（ROS2 BehaviorTree.CPP）</li>
+        <li class="known-app-item">AIエージェントのタスク分岐制御（LLMベースエージェント）</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <div class="section-title">情報ソース</div>
+      <div class="cards-grid">
+        <div class="source-card">
+          <span class="source-type-badge">web_article</span>
+          <div>
+            <div class="source-title">Behavior Trees in Robotics and AI: An Introduction</div>
+            <div class="source-meta">arxiv.org · 2019-04-15 · 信頼度: 0.92</div>
+            <a href="#" class="source-link">ソースを確認 →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

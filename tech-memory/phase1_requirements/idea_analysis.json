@@ -1,0 +1,178 @@
+{
+  "project_name": "tech-memory",
+  "purpose": "研究・開発・ゲーム制作・システム設計など複数分野で使える技術知識DBを構築するシステム。論文、技術記事、GitHub、公式Docs、技術ブログなどから技術情報を収集し、技術名を知らなくても課題・目的・分野から関連技術を検索・推薦できる。",
+  "target_users": [
+    "ソフトウェアエンジニア（技術選定・実装方針の調査）",
+    "研究者（論文・技術情報の収集・整理）",
+    "ゲーム開発者（AI・物理・描画技術の調査）",
+    "アーキテクト・テックリード（設計パターン・技術比較）",
+    "個人開発者（複数分野の技術を横断的に学びたい人）"
+  ],
+  "features": [
+    {
+      "id": "F001",
+      "name": "URL収集",
+      "description": "URLを入力すると、Web記事・arXiv論文・GitHub READMEのコンテンツを取得し、技術カードを自動生成する。MVPではURL・メタデータ・要約・抽出知識を保存し、著作権上問題のある全文コピーは保存しない。",
+      "priority": "MUST",
+      "platforms": ["web", "api"]
+    },
+    {
+      "id": "F002",
+      "name": "技術カード自動生成",
+      "description": "LLM structured output を使い、URLやテキストから技術名・概要・中核メカニズム・抽象原理・目的・メリット・デメリット・トレードオフ・成立条件・失敗条件を抽出して技術カードとして保存する。",
+      "priority": "MUST",
+      "platforms": ["api"]
+    },
+    {
+      "id": "F003",
+      "name": "技術名・課題・分野からの検索",
+      "description": "技術名による完全一致・部分一致検索、および自然言語の課題・問題文からの意味的検索（pgvector）をサポートする。分野フィルタも利用できる。",
+      "priority": "MUST",
+      "platforms": ["web", "api"]
+    },
+    {
+      "id": "F004",
+      "name": "PostgreSQL + pgvector による検索基盤",
+      "description": "PostgreSQLとpgvectorを使ったハイブリッド検索（キーワード + ベクトル類似度）を実現する。embeddingはtechnology_itemsとuse_casesに付与する。",
+      "priority": "MUST",
+      "platforms": ["api"]
+    },
+    {
+      "id": "F005",
+      "name": "技術カード詳細表示",
+      "description": "技術名・概要・中核メカニズム・抽象原理・目的・メリット・デメリット・トレードオフ・有効な条件・避けるべき条件・代替技術・組み合わせ技術・既知の応用例・根拠ソースを詳細画面で表示する。",
+      "priority": "MUST",
+      "platforms": ["web"]
+    },
+    {
+      "id": "F006",
+      "name": "キーワード収集",
+      "description": "キーワード・技術名を入力すると、関連情報を外部ソースから検索・収集して技術カードを生成する。",
+      "priority": "SHOULD",
+      "platforms": ["web", "api"]
+    },
+    {
+      "id": "F007",
+      "name": "技術比較",
+      "description": "複数の技術を指定してメリット・デメリット・適用条件を比較表示する。",
+      "priority": "SHOULD",
+      "platforms": ["web", "api"]
+    },
+    {
+      "id": "F008",
+      "name": "技術推薦",
+      "description": "ユーザーの課題・制約を入力すると、適合度スコア付きの技術候補を推薦する。",
+      "priority": "SHOULD",
+      "platforms": ["web", "api"]
+    },
+    {
+      "id": "F009",
+      "name": "手入力メモからの技術カード生成",
+      "description": "ユーザーが自由記述でメモを入力し、LLMがそこから技術カードを生成する。",
+      "priority": "SHOULD",
+      "platforms": ["web", "api"]
+    },
+    {
+      "id": "F010",
+      "name": "技術間関係の保存と表示",
+      "description": "similar_to, alternative_to, combines_with, depends_on などの関係を保存し、関連技術を辿れるようにする。",
+      "priority": "SHOULD",
+      "platforms": ["web", "api"]
+    },
+    {
+      "id": "F011",
+      "name": "定期収集・スケジューラー",
+      "description": "ユーザーが設定したキーワード・分野に基づき、定期的に技術情報を収集してDBに追加する。",
+      "priority": "COULD",
+      "platforms": ["api"]
+    },
+    {
+      "id": "F012",
+      "name": "抽象原理ベースの転用検索",
+      "description": "異なる分野で使われている技術を抽象原理ベースで横断検索し、他分野への応用候補を提示する。",
+      "priority": "COULD",
+      "platforms": ["web", "api"]
+    },
+    {
+      "id": "F013",
+      "name": "技術グラフ可視化",
+      "description": "技術間の関係をグラフとして可視化する（Neo4jなどは不使用、PostgreSQLで管理）。",
+      "priority": "COULD",
+      "platforms": ["web"]
+    }
+  ],
+  "use_cases": [
+    {
+      "id": "UC001",
+      "actor": "エンジニア",
+      "action": "技術記事・論文のURLを入力する",
+      "result": "技術カードが自動生成され、DBに保存される。検出された技術名・概要・メリット・デメリットを確認できる。",
+      "related_features": ["F001", "F002"]
+    },
+    {
+      "id": "UC002",
+      "actor": "エンジニア",
+      "action": "「NPCの行動制御に使える技術を探したい」と自然言語で検索する",
+      "result": "Behavior Tree, Utility AI, GOAP などが適合度スコア付きで表示される。",
+      "related_features": ["F003", "F004"]
+    },
+    {
+      "id": "UC003",
+      "actor": "研究者",
+      "action": "arXiv URLを入力する",
+      "result": "論文タイトル・著者・要約・抽出技術が技術カードとして保存される。",
+      "related_features": ["F001", "F002"]
+    },
+    {
+      "id": "UC004",
+      "actor": "アーキテクト",
+      "action": "技術名「RAG」を検索する",
+      "result": "RAGの詳細カード（概要・中核メカニズム・代替技術・組み合わせ技術・条件）が表示される。",
+      "related_features": ["F003", "F005"]
+    },
+    {
+      "id": "UC005",
+      "actor": "ゲーム開発者",
+      "action": "「FSM, Behavior Tree, GOAP, Utility AIを比較して」と検索する",
+      "result": "各技術のメリット・デメリット・適用条件の比較表が表示される。",
+      "related_features": ["F007"]
+    },
+    {
+      "id": "UC006",
+      "actor": "エンジニア",
+      "action": "GitHub READMEのURLを入力する",
+      "result": "READMEから技術・ツール情報が抽出され、技術カードが生成される。",
+      "related_features": ["F001", "F002"]
+    },
+    {
+      "id": "UC007",
+      "actor": "個人開発者",
+      "action": "「ゲーム開発の分野」で検索する",
+      "result": "ゲーム開発ドメインに関連する技術一覧が表示される。",
+      "related_features": ["F003", "F004"]
+    }
+  ],
+  "assumptions": [
+    "認証・ユーザー管理はMVPスコープ外とする（シングルユーザー前提）",
+    "定期収集はPhase 1では対象外とし、手動収集のみ実装する",
+    "技術グラフ可視化はPhase 1では対象外",
+    "embeddingモデルはOpenAI text-embedding-3-small または互換モデルを使用する（未確定のためassumptionとして記録）",
+    "LLMはClaude APIまたはOpenAI APIを使用する（仕様書ではどちらも候補として記載されている）",
+    "Dockerによる環境管理を前提とし、pip installやvenv構築は不要",
+    "収集対象はURL・Web記事・arXiv・GitHub READMEに限定（Phase 1）",
+    "DOI・PubMed・Semantic ScholarなどはPhase 1スコープ外とする",
+    "技術カードの手動編集機能はMVPスコープ外とする"
+  ],
+  "out_of_scope": [
+    "大規模クローリング・自動巡回",
+    "出版社PDFの全文保存",
+    "完全自動の新規研究提案",
+    "複雑な組織権限管理・チーム機能",
+    "Neo4j等の本格グラフDB",
+    "ブラウザ拡張",
+    "Slack / Notion連携",
+    "定期収集スケジューラー（Phase 1では対象外）",
+    "モバイルアプリ・デスクトップアプリ",
+    "PubMed・Semantic Scholar・OpenAlex等の論文DBへの直接API連携"
+  ]
+}
