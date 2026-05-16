@@ -43,6 +43,9 @@ Version 1.0 | 実行環境: Claude Code | バージョン管理: GitHub
 | Coder/Debuggerペアリング | 実装と検証を分離し、品質を担保する。コードは常にCoderのみが書く |
 | ユーザー介入 | 基本的に自動進行し、重要フェーズの承認ゲートでユーザーがテキスト+画像でFBできる。修正回数に制限なし |
 | バージョン管理 | 全成果物をGitHubで管理し、やり直し時もブランチで前バージョンを保持・比較可能 |
+| コンテキスト最小化 | Orchestratorはゲートサマリー（`phase{N}_gate_summary.md`）と`pipeline_state.yaml`のみ読む。詳細報告書はエージェントが保持し、Orchestratorのコンテキストを肥大させない |
+| 並列実行 | Phase 3でBE LeadとFE Lead（PF別）を同時起動する。書き込み先ディレクトリを分離することでファイル競合を防ぐ |
+| 環境分離 | プロジェクトごとに独立したディレクトリ（`~/projects/{name}/`）と仮想環境を使用する。Node.jsはバージョンを`.node-version`で固定しcorepack経由のpnpmを使用。Pythonスタックの場合は`.venv/`を作成する。グローバルな依存関係は使用しない |
 
 ---
 
@@ -62,10 +65,12 @@ Version 1.0 | 実行環境: Claude Code | バージョン管理: GitHub
 
 承認ゲートはPhase 1、Phase 2、Phase 3の完了時に設置される。
 
-- ユーザーは各フェーズの成果物を確認し、テキストおよび画像でフィードバックを提供できる
+- 各フェーズの最終エージェントが `phase{N}_gate_summary.md`（50〜60行以内）を生成する
+- Orchestratorはこのサマリーのみを読んでユーザーに提示する（詳細報告書は直接参照しない）
+- ユーザーはサマリーを確認し、テキストおよび画像でフィードバックを提供できる
 - NGの場合、該当フェーズに差し戻して修正を行う
 - 修正回数に上限はない（ユーザーがOKするまで繰り返す）
-- Phase 3の承認ゲートでは、BE実装報告書とFE実装報告書の両方をユーザーが確認する
+- Phase 3の承認ゲートでは、BE・FE実装のサマリーを統合して提示する
 
 ### 2.3 監督体制
 
@@ -86,7 +91,7 @@ Version 1.0 | 実行環境: Claude Code | バージョン管理: GitHub
 |---|---|
 | **システムプロンプト** | 全フェーズの進行管理・意思決定・ユーザーFB統合を行う総指揮官。各フェーズの開始/終了判定、承認ゲート管理、エラー時の差し戻し判断、ユーザーとの対話窓口を担う。また、BEコードのコア機能・API設計の整合性を監督する。 |
 | **入力** | ユーザーのアイデア入力、PF選択、各フェーズの完了報告、ユーザーFB（テキスト+画像） |
-| **出力** | フェーズ開始指示、承認判定、差し戻し指示、pipeline_state.yaml更新、decision_log.md |
+| **出力** | フェーズ開始指示、承認判定、差し戻し指示、pipeline_state.yaml更新、decision_log.md（1行1イベント形式） |
 | **前提条件** | ユーザーからのアイデア入力が存在すること |
 | **終了条件** | Phase 5の成果物生成が完了 |
 | **制約** | 他エージェントの成果物を直接編集しない。判断と指示のみ。全フェーズの成果物を読み取りで監視。 |
@@ -209,9 +214,9 @@ Phase 3はバックエンド系とフロントエンド系に分離され、そ�
 |---|---|
 | **システムプロンプト** | 担当PFのフロントエンドのタスク分割と管理。デザイントークンとモックアップを「正解」として参照し、各タスクの入出力を定義してペアに割り当てる。デザイナーの監督下で動作。 |
 | **入力** | phase2/design/\*, phase2/ui_ux/\*, phase3/shared_core/, phase3/backend/api/（APIスキーマ参照） |
-| **出力** | phase3/frontend/{pf}/（コンポーネント群）, phase3/reports/fe_report.md |
+| **出力** | phase3/frontend/{pf}/（コンポーネント群）, phase3/reports/fe_report_{pf}.md |
 | **前提条件** | shared_core完成済み、BE API定義済み |
-| **終了条件** | 全FEタスク完了、fe_report.md生成、デザイナー確認済み |
+| **終了条件** | 全FEタスク完了、fe_report_{pf}.md生成、デザイナー確認済み |
 
 #### Coder（汎用テンプレート）
 
@@ -316,7 +321,7 @@ Phase 3はバックエンド系とフロントエンド系に分離され、そ�
 
 | 項目 | 内容 |
 |---|---|
-| **システムプロンプト** | 全フェーズの成果物からREADME、セットアップガイド、API仕様書、デプロイ手順書を生成する。PF別のドキュメントも作成。 |
+| **システムプロンプト** | 全フェーズの成果物からREADME、API仕様書、デプロイ手順書を生成する。READMEは「上から順番に実行すれば動く」構成とし、ステップ番号・実行コマンド・期待する出力・トラブルシューティングをセットで記述する。PF別のドキュメントも作成。 |
 | **入力** | phase1〜phase4の全成果物 |
 | **出力** | phase5/docs/（README、ガイド、API仕様書等） |
 | **前提条件** | Phase 4完了 |
@@ -343,6 +348,9 @@ Phase 3はバックエンド系とフロントエンド系に分離され、そ�
 ### 4.2 ディレクトリ構造
 
 ```
+project_workspace/             ← ルートに配置するファイル
+├── PROJECT_INDEX.md           ← 全ドキュメントへのリンク集（フェーズ完了ごとに更新）
+
 ~/design_library/              ← プロジェクト外（グローバル素材ライブラリ）
 ├── images/                    ← 参考画像（Webページ、アプリ、スライド等）
 ├── themes/                    ← テーマ記述テキスト
@@ -360,11 +368,13 @@ project_workspace/
 │   ├── idea_analysis.json     ← アイデア解析結果
 │   ├── requirements_spec.md   ← 要件定義書
 │   ├── tech_stack.yaml        ← 技術スタック選定
-│   └── sharing_strategy.yaml  ← 共有度判定結果
+│   ├── sharing_strategy.yaml  ← 共有度判定結果
+│   └── phase1_gate_summary.md ← 承認ゲート用サマリー（技術選定エージェントが生成）
 │
 ├── phase2_design/             ← Phase 2 成果物
 │   ├── architecture.md        ← アーキテクチャ設計
 │   ├── data_model.json        ← DB/ERスキーマ
+│   ├── phase2_gate_summary.md ← 承認ゲート用サマリー（デザイナーエージェントが生成）
 │   ├── ui_ux/
 │   │   ├── screen_flow.md     ← 画面遷移図
 │   │   └── wireframes/        ← ワイヤーフレーム群
@@ -385,23 +395,25 @@ project_workspace/
 │   ├── shared_core/           ← 共有コア（型定義・ユーティリティ）
 │   ├── reports/
 │   │   ├── be_report.md       ← BE実装報告書
-│   │   ├── fe_report.md       ← FE実装報告書
-│   │   └── final_code_spec.md ← コード仕様書
+│   │   ├── fe_report_{pf}.md  ← FE実装報告書（PF別。例: fe_report_web.md）
+│   │   ├── fe_report.md       ← FE実装報告書（全PFを統合済み）
+│   │   ├── final_code_spec.md ← コード仕様書
+│   │   └── phase3_gate_summary.md ← 承認ゲート用サマリー（レポーターが生成）
 │   └── optimizer_log.md       ← オプティマイザー修正ログ
 │
 ├── phase4_qa/                 ← Phase 4 成果物
 │   ├── test_results/
 │   ├── review_comments.md
-│   └── integration_report.md
+│   ├── integration_report.md
+│   └── autofix_log.md         ← 自動修正ログ
 │
 ├── phase5_output/             ← Phase 5 最終成果物
 │   ├── docs/
 │   └── packages/
 │
 └── _orchestrator/             ← オーケストレーター専用
-    ├── pipeline_state.yaml    ← 全体進捗状態
-    ├── agent_registry.yaml    ← エージェント一覧と状態
-    └── decision_log.md        ← 意思決定ログ
+    ├── pipeline_state.yaml    ← 全体進捗状態（再開時の基準ファイル）
+    └── decision_log.md        ← 意思決定ログ（1行1イベント形式）
 ```
 
 **グローバル素材ライブラリ（~/design_library/）** はプロジェクト外に独立して配置され、デザイナーエージェントのみが読み取りアクセスできる。複数プロジェクトで再利用可能。ユーザーは気に入ったデザインのWebページ、アプリ、スライドなどをこのフォルダに保存する。
@@ -483,32 +495,35 @@ project_workspace/
 | 実行環境 | Claude Code |
 | 技術スタック | アイデアから全自動で選定。技術選定エージェントが要件に基づき最適なフレームワーク・言語・DB・インフラを自動決定する。 |
 | バージョン管理 | GitHub |
+| プロジェクト配置 | `~/projects/{project_name}/` に独立して生成。プロジェクト間で依存関係は共有しない |
+| Node.js 環境 | `.node-version` でバージョン固定。corepack 経由の pnpm をプロジェクトローカルで使用 |
+| Python 環境 | Python スタック選択時は `.venv/` を自動作成。グローバルパッケージを使用しない |
 | ユーザーインターフェース | 進捗のリアルタイム閲覧、承認ゲートでのテキスト+画像フィードバック、GitHub上でのバージョン比較 |
 
 ---
 
 ## エージェント一覧サマリ
 
-| # | エージェント名 | フェーズ | 役割 |
-|---|---|---|---|
-| 1 | Orchestrator | 常駐 | 全体指揮・進捗管理・BE監督 |
-| 2 | アイデア解析 | Phase 1 | 機能抽出・ユースケース構造化 |
-| 3 | 要件定義 | Phase 1 | 仕様書・共有度判定 |
-| 4 | 技術選定 | Phase 1 | スタック自動選定 |
-| 5 | アーキテクチャ設計 | Phase 2 | 全体構造・API設計 |
-| 6 | データモデル設計 | Phase 2 | DB/ER図・スキーマ |
-| 7 | UI/UX設計 | Phase 2 | 画面遷移・ワイヤーフレーム |
-| 8 | デザイナー | Phase 2 / FE監督 | モックアップ生成・UI品質監督 |
-| 9 | 共有コア Lead Coder | Phase 3 | 共有ロジックの分割管理 |
-| 10 | BE Lead Coder | Phase 3 | バックエンドの分割管理 |
-| 11 | FE Lead Coder（PF別） | Phase 3 | 各PFフロントエンドの分割管理 |
-| 12 | Coder（汎用） | Phase 3 | タスク単位のコード実装 |
-| 13 | Debugger（汎用） | Phase 3 | 検証・修正指示 |
-| 14 | コードオプティマイザー | Phase 3 | 横断的品質チェック・最適化 |
-| 15 | レポーター | Phase 3 | コード仕様書生成・報告 |
-| 16 | テスト生成・実行 | Phase 4 | E2E・結合テスト |
-| 17 | コードレビュー | Phase 4 | セキュリティ・品質レビュー |
-| 18 | 統合検証 | Phase 4 | BE/FE結合・PF間一貫性 |
-| 19 | 自動修正 | Phase 4 | 問題修正・再テスト |
-| 20 | ドキュメント生成 | Phase 5 | README・ガイド・API仕様書 |
-| 21 | パッケージング | Phase 5 | PF別ビルド・デプロイ準備 |
+| # | エージェント名 | フェーズ | 役割 | モデル |
+|---|---|---|---|---|
+| 1 | Orchestrator | 常駐 | 全体指揮・進捗管理・BE監督 | Opus 4.7 |
+| 2 | アイデア解析 | Phase 1 | 機能抽出・ユースケース構造化 | Sonnet 4.6 |
+| 3 | 要件定義 | Phase 1 | 仕様書・共有度判定 | Sonnet 4.6 |
+| 4 | 技術選定 | Phase 1 | スタック自動選定 + ゲートサマリー生成 | Sonnet 4.6 |
+| 5 | アーキテクチャ設計 | Phase 2 | 全体構造・API設計 | Opus 4.7 |
+| 6 | データモデル設計 | Phase 2 | DB/ER図・スキーマ | Sonnet 4.6 |
+| 7 | UI/UX設計 | Phase 2 | 画面遷移・ワイヤーフレーム | Sonnet 4.6 |
+| 8 | デザイナー | Phase 2 / FE監督 | モックアップ生成・UI品質監督 + ゲートサマリー生成 | Sonnet 4.6 |
+| 9 | 共有コア Lead Coder | Phase 3 | 共有ロジックの分割管理 | Sonnet 4.6 |
+| 10 | BE Lead Coder | Phase 3 | バックエンドの分割管理（BE/FE並列実行） | Sonnet 4.6 |
+| 11 | FE Lead Coder（PF別） | Phase 3 | 各PFフロントエンドの分割管理（BE/FE並列実行） | Sonnet 4.6 |
+| 12 | Coder（汎用） | Phase 3 | タスク単位のコード実装 | Haiku 4.5 |
+| 13 | Debugger（汎用） | Phase 3 | 検証・修正指示 | Haiku 4.5 |
+| 14 | コードオプティマイザー | Phase 3 | 横断的品質チェック・最適化 | Sonnet 4.6 |
+| 15 | レポーター | Phase 3 | コード仕様書生成 + ゲートサマリー生成 | Haiku 4.5 |
+| 16 | テスト生成・実行 | Phase 4 | E2E・結合テスト | Sonnet 4.6 |
+| 17 | コードレビュー | Phase 4 | セキュリティ・品質レビュー | Sonnet 4.6 |
+| 18 | 統合検証 | Phase 4 | BE/FE結合・PF間一貫性 | Sonnet 4.6 |
+| 19 | 自動修正 | Phase 4 | 問題修正・再テスト | Sonnet 4.6 |
+| 20 | ドキュメント生成 | Phase 5 | README・ガイド・API仕様書 | Haiku 4.5 |
+| 21 | パッケージング | Phase 5 | PF別ビルド・デプロイ準備 | Haiku 4.5 |
