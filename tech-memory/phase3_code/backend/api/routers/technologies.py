@@ -20,6 +20,7 @@ from api.schemas import (
 )
 from db.models.technology import TechnologyCondition, TechnologyItem, TechnologyRelation
 from db.models.sources import Source
+from db.models.use_cases import Evidence
 from db.session import get_db
 
 router = APIRouter()
@@ -97,8 +98,7 @@ async def get_technology(
                 TechnologyRelation.object_technology
             ),
             selectinload(TechnologyItem.evidence_list).selectinload(
-                # type: ignore[attr-defined]
-                type(None)  # placeholder
+                Evidence.source
             ),
         )
     )
