@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: tech-memory-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-techuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-techpass}
+      POSTGRES_DB: ${POSTGRES_DB:-techdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-techuser} -d ${POSTGRES_DB:-techdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tech-memory-api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-techuser}:${POSTGRES_PASSWORD:-techpass}@db:5432/${POSTGRES_DB:-techdb}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  web:
+    build:
+      context: ./frontend/web
+      dockerfile: Dockerfile
+    container_name: tech-memory-web
+    env_file:
+      - .env
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    volumes:
+      - ./frontend/web:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres_data:

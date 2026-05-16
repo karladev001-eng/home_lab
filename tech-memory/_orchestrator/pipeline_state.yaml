@@ -1,0 +1,11 @@
+current_phase: 3
+phases:
+  phase1: approved
+  phase2: approved
+  phase3: running
+  phase4: pending
+  phase5: pending
+approval_gates:
+  phase1: approved
+  phase2: approved
+  phase3: pending

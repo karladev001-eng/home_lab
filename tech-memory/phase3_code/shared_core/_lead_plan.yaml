@@ -1,0 +1,22 @@
+tasks:
+  - id: "SC-001"
+    name: "型定義パッケージ"
+    path: "shared_core/types/"
+    description: "全エンティティのTypeScript型定義 + APIリクエスト/レスポンス型"
+    output_files:
+      - "shared_core/types/src/entities.ts"
+      - "shared_core/types/src/api.ts"
+      - "shared_core/types/src/index.ts"
+      - "shared_core/types/package.json"
+      - "shared_core/types/tsconfig.json"
+    status: "completed"
+
+  - id: "SC-002"
+    name: "APIパス定数パッケージ"
+    path: "shared_core/constants/"
+    description: "collection_mode, search_mode, item_type等の共通定数とAPIパス定義"
+    output_files:
+      - "shared_core/constants/src/index.ts"
+      - "shared_core/constants/package.json"
+      - "shared_core/constants/tsconfig.json"
+    status: "completed"
