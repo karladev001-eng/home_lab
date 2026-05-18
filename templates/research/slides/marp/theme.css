@@ -1,0 +1,45 @@
+/*
+ * Shared Marp theme starter for research decks.
+ * Copy into research/slides/templates/ when needed.
+ */
+
+section {
+  font-family: "Aptos", "Helvetica Neue", Arial, sans-serif;
+  font-size: 30px;
+  line-height: 1.45;
+  color: #1d2125;
+  background:
+    radial-gradient(circle at top right, rgba(159, 61, 32, 0.1), transparent 24rem),
+    #f7f3ec;
+  padding: 56px 72px;
+}
+
+h1,
+h2,
+h3 {
+  color: #132117;
+  line-height: 1.08;
+  margin-bottom: 0.4em;
+}
+
+h1 {
+  font-size: 1.8em;
+}
+
+h2 {
+  font-size: 1.3em;
+}
+
+strong {
+  color: #9f3d20;
+}
+
+table {
+  font-size: 0.8em;
+}
+
+blockquote {
+  color: #4c5a4d;
+  border-left: 4px solid #9f3d20;
+  padding-left: 16px;
+}
